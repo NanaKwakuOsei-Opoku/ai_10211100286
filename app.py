@@ -760,8 +760,8 @@ elif task == "LLM Q&A":
     # Preloaded Datasets
     # ------------------------------
     datasets = {
-        "2025 Budget Statement (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/2025-Budget-Statement-and-Economic-Policy_v4.pdf",
-        "Academic City Student Handbook (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/handbook.pdf"
+        "2025 Budget Statement (PDF)": "2025-Budget-Statement-and-Economic-Policy_v4.pdf",
+        "Academic City Student Handbook (PDF)": "handbook.pdf"
     }
     
     dataset_name = st.selectbox("Choose a dataset:", list(datasets.keys()))
