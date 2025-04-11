@@ -718,6 +718,10 @@ elif task == "LLM Q&A":
     # Use the gemini-2.0-flash model.
     model = client.models  # We'll call generate_content via this client
 
+    # ------------------------------
+    # Cached Functions for PDF Processing
+    # ------------------------------
+    @st.cache_data(show_spinner=False)
     def extract_text_from_pdf(file_path):
         """Extract text from a PDF file for retrieval purposes."""
         try:
@@ -730,19 +734,27 @@ elif task == "LLM Q&A":
             st.error(f"Error reading PDF: {e}")
             return ""
 
-    def offer_pdf_download(file_path):
-        """Offer a download button for the PDF and provide instructions for the user."""
+    @st.cache_data(show_spinner=False)
+    def get_pdf_base64(file_path):
+        """Read and encode a PDF file in base64 for download."""
         try:
             import base64
             with open(file_path, "rb") as f:
-                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-            file_name = os.path.basename(file_path)
-            st.download_button("Download PDF", data=base64_pdf, file_name=file_name, mime="application/pdf")
-            st.info("Download the PDF and view it with your local PDF reader or browser.")
+                return base64.b64encode(f.read()).decode('utf-8')
         except Exception as e:
-            st.error(f"Error processing PDF for download: {e}")
+            st.error(f"Error encoding PDF: {e}")
+            return ""
 
-    # Preloaded datasets (update these paths as needed)
+    def offer_pdf_download(file_path):
+        """Offer a download button for the PDF and provide instructions for the user."""
+        base64_pdf = get_pdf_base64(file_path)
+        file_name = os.path.basename(file_path)
+        st.download_button("Download PDF", data=base64_pdf, file_name=file_name, mime="application/pdf")
+        st.info("Download the PDF and view it with your local PDF reader or browser.")
+
+    # ------------------------------
+    # Preloaded Datasets
+    # ------------------------------
     datasets = {
         "2025 Budget Statement (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/2025-Budget-Statement-and-Economic-Policy_v4.pdf",
         "Academic City Student Handbook (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/handbook.pdf"
@@ -756,13 +768,16 @@ elif task == "LLM Q&A":
         st.subheader("📄 PDF Preview")
         with st.spinner("Processing PDF... Please wait"):
             offer_pdf_download(selected_path)
+            # Cached extraction: this will only run once per unique file_path.
             content = extract_text_from_pdf(selected_path)
     else:
         st.error("Unsupported file format. Please select a PDF file.")
 
+    # ------------------------------
+    # RAG Retrieval Settings
+    # ------------------------------
     st.markdown("### RAG Retrieval Settings")
     import re
-    # Split the extracted content into paragraphs.
     paragraphs = content.split("\n\n")
     num_passages = st.slider("Number of top passages to retrieve:", 1, 10, 3)
     query = st.text_input("Enter your question:")
@@ -778,6 +793,9 @@ elif task == "LLM Q&A":
     else:
         retrieval_context = content
 
+    # ------------------------------
+    # Ask Gemini
+    # ------------------------------
     st.subheader("❓ Ask a Question")
     if st.button("Ask Gemini"):
         if retrieval_context and query:
@@ -793,6 +811,7 @@ elif task == "LLM Q&A":
                     st.error(f"Error generating response: {e}")
         else:
             st.warning("Please load the PDF content and enter a question.")
+
 
 
 
