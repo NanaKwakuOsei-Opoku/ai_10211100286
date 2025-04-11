@@ -713,7 +713,7 @@ elif task == "LLM Q&A":
         st.error("❌ Gemini API key not found. Please set GEMINI_API_KEY in your .env file.")
         st.stop()
 
-    from google import genai
+    import google.generativeai as genai
     client = genai.Client(api_key=GEMINI_API_KEY)
     # Use the gemini-2.0-flash model.
     model = client.models  # We'll call generate_content via this client
