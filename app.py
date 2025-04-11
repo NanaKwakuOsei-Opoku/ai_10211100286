@@ -689,28 +689,23 @@ elif task == "Neural Network":
 
 
 
-
 #############################################
-# d) LLM Q&A using Gemini AI / LLM RAG & Multimodal
+# d) LLM Q&A using Gemini AI (RAG Mode)
 #############################################
 elif task == "LLM Q&A":
-    st.header("💬 LLM Q&A using Gemini AI")
+    st.header("💬 LLM Q&A using Gemini AI (RAG Mode)")
     st.markdown("""
-    **LLM Approach Options:**
-    - **Retrieval-Augmented Generation (RAG):** Extracts the most relevant text snippets from the selected dataset based on your query.
-    - **Multimodal:** Uses the entire content as context along with your query.
+    **LLM Approach: Retrieval-Augmented Generation (RAG)**  
+    The system extracts the most relevant text snippets from the selected PDF dataset based on your query.
     
     **Instructions:**
-    1. Choose your LLM approach.
-    2. Select a preloaded dataset.
-    3. Preview the content (CSV is shown in tabular form; PDFs are available for download).
+    1. Select a preloaded PDF dataset.
+    2. Download or preview the PDF content.
+    3. Adjust retrieval settings to choose the number of passages.
     4. Enter your question and receive a real-time answer.
     """)
 
-    # Choose LLM Approach.
-    llm_approach = st.radio("Select LLM Approach", options=["RAG", "Multimodal"], index=0)
-
-    # Load environment variables and initialize Gemini API.
+    # Load environment variables and initialize the Gemini API.
     from dotenv import load_dotenv, find_dotenv
     load_dotenv(find_dotenv())
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -718,47 +713,37 @@ elif task == "LLM Q&A":
         st.error("❌ Gemini API key not found. Please set GEMINI_API_KEY in your .env file.")
         st.stop()
 
-    # Instantiate the Gemini API client.
     from google import genai
     client = genai.Client(api_key=GEMINI_API_KEY)
     # Use the gemini-2.0-flash model.
     model = client.models  # We'll call generate_content via this client
 
-    # Use caching to avoid repeated heavy PDF processing.
-    @st.cache_data(show_spinner=True)
     def extract_text_from_pdf(file_path):
         """Extract text from a PDF file for retrieval purposes."""
         try:
             import PyPDF2
             with open(file_path, "rb") as file:
                 reader = PyPDF2.PdfReader(file)
+                # Combine text from all pages.
                 return "\n".join([page.extract_text() or "" for page in reader.pages])
         except Exception as e:
             st.error(f"Error reading PDF: {e}")
             return ""
-    
-    @st.cache_data(show_spinner=True)
-    def get_pdf_base64(file_path):
-        """Read and encode a PDF file in base64 for download."""
+
+    def offer_pdf_download(file_path):
+        """Offer a download button for the PDF and provide instructions for the user."""
         try:
             import base64
             with open(file_path, "rb") as f:
-                return base64.b64encode(f.read()).decode('utf-8')
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+            file_name = os.path.basename(file_path)
+            st.download_button("Download PDF", data=base64_pdf, file_name=file_name, mime="application/pdf")
+            st.info("Download the PDF and view it with your local PDF reader or browser.")
         except Exception as e:
-            st.error(f"Error encoding PDF: {e}")
-            return ""
-    
-    # For PDFs, instead of trying to embed them which might be slow, we offer a download option.
-    def offer_pdf_download(file_path):
-        """Offer a download button for the PDF and inform the user."""
-        base64_pdf = get_pdf_base64(file_path)
-        file_name = os.path.basename(file_path)
-        st.download_button("Download PDF", data=base64_pdf, file_name=file_name, mime="application/pdf")
-        st.info("Download the PDF and view it with your local PDF reader or browser.")
+            st.error(f"Error processing PDF for download: {e}")
 
-    # Preloaded datasets (update file paths as needed)
+    # Preloaded datasets (update these paths as needed)
     datasets = {
-        "Ghana Election Results (CSV)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/Ghana_Election_Result.csv",
         "2025 Budget Statement (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/2025-Budget-Statement-and-Economic-Policy_v4.pdf",
         "Academic City Student Handbook (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/handbook.pdf"
     }
@@ -766,43 +751,31 @@ elif task == "LLM Q&A":
     dataset_name = st.selectbox("Choose a dataset:", list(datasets.keys()))
     selected_path = datasets[dataset_name]
     content = ""
-    df_csv = None
 
-    # Load and preview content based on file extension.
-    if selected_path.endswith(".csv"):
-        df_csv = pd.read_csv(selected_path)
-        st.subheader("📊 CSV Preview")
-        st.dataframe(df_csv.head(10))
-        # For retrieval purposes, convert the DataFrame to text.
-        content = df_csv.to_string(index=False)
-    elif selected_path.endswith(".pdf"):
+    if selected_path.endswith(".pdf"):
         st.subheader("📄 PDF Preview")
         with st.spinner("Processing PDF... Please wait"):
             offer_pdf_download(selected_path)
             content = extract_text_from_pdf(selected_path)
-
-    # -------------------------------------------------------------
-    # Retrieval for RAG Approach
-    # -------------------------------------------------------------
-    if llm_approach == "RAG":
-        st.markdown("### RAG Retrieval Settings")
-        import re
-        paragraphs = content.split("\n\n")
-        num_passages = st.slider("Number of top passages to retrieve:", 1, 10, 3)
-        query = st.text_input("Enter your question for RAG:")
-        if query:
-            query_terms = set(re.findall(r'\w+', query.lower()))
-            ranked = []
-            for p in paragraphs:
-                p_terms = set(re.findall(r'\w+', p.lower()))
-                score = len(query_terms.intersection(p_terms))
-                ranked.append((score, p))
-            ranked.sort(key=lambda x: x[0], reverse=True)
-            retrieval_context = "\n\n".join([p for score, p in ranked[:num_passages]])
-        else:
-            retrieval_context = content
     else:
-        query = st.text_input("Enter your question:")
+        st.error("Unsupported file format. Please select a PDF file.")
+
+    st.markdown("### RAG Retrieval Settings")
+    import re
+    # Split the extracted content into paragraphs.
+    paragraphs = content.split("\n\n")
+    num_passages = st.slider("Number of top passages to retrieve:", 1, 10, 3)
+    query = st.text_input("Enter your question:")
+    if query:
+        query_terms = set(re.findall(r'\w+', query.lower()))
+        ranked = []
+        for p in paragraphs:
+            p_terms = set(re.findall(r'\w+', p.lower()))
+            score = len(query_terms.intersection(p_terms))
+            ranked.append((score, p))
+        ranked.sort(key=lambda x: x[0], reverse=True)
+        retrieval_context = "\n\n".join([p for score, p in ranked[:num_passages]])
+    else:
         retrieval_context = content
 
     st.subheader("❓ Ask a Question")
@@ -819,7 +792,8 @@ elif task == "LLM Q&A":
                 except Exception as e:
                     st.error(f"Error generating response: {e}")
         else:
-            st.warning("Please load content and enter a question.")
+            st.warning("Please load the PDF content and enter a question.")
+
 
 
 
