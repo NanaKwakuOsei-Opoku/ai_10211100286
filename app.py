@@ -697,7 +697,7 @@ elif task == "Neural Network":
 # d) LLM Q&A using Gemini AI (RAG Mode)
 #############################################
 elif task == "LLM Q&A":
-    st.header("💬 LLM Q&A using Gemini AI (RAG Mode)")
+    st.header("💬 LLM Q&A with Gemini AI")
     st.markdown("""
     **LLM Approach: Retrieval-Augmented Generation (RAG)**  
     The system extracts the most relevant text snippets from the selected PDF dataset based on your query.
@@ -714,13 +714,12 @@ elif task == "LLM Q&A":
     load_dotenv(find_dotenv())
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if not GEMINI_API_KEY:
-        st.error("❌ Gemini API key not found. Please set GEMINI_API_KEY in your .env file.")
+        st.error("❌ Gemini API key not found. Please add GEMINI_API_KEY to your .env file.")
         st.stop()
-
-    
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    # Use the gemini-2.0-flash model.
-    model = client.models  # We'll call generate_content via this client
+    else:
+        genai.configure(api_key=GEMINI_API_KEY)
+        # Use the known working model variant; ensure your .env key is correct.
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
     # ------------------------------
     # Cached Functions for PDF Processing
@@ -737,7 +736,7 @@ elif task == "LLM Q&A":
         except Exception as e:
             st.error(f"Error reading PDF: {e}")
             return ""
-
+    
     @st.cache_data(show_spinner=False)
     def get_pdf_base64(file_path):
         """Read and encode a PDF file in base64 for download."""
@@ -748,14 +747,15 @@ elif task == "LLM Q&A":
         except Exception as e:
             st.error(f"Error encoding PDF: {e}")
             return ""
-
+    
     def offer_pdf_download(file_path):
         """Offer a download button for the PDF and provide instructions for the user."""
+        import os
         base64_pdf = get_pdf_base64(file_path)
         file_name = os.path.basename(file_path)
         st.download_button("Download PDF", data=base64_pdf, file_name=file_name, mime="application/pdf")
         st.info("Download the PDF and view it with your local PDF reader or browser.")
-
+    
     # ------------------------------
     # Preloaded Datasets
     # ------------------------------
@@ -763,11 +763,11 @@ elif task == "LLM Q&A":
         "2025 Budget Statement (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/2025-Budget-Statement-and-Economic-Policy_v4.pdf",
         "Academic City Student Handbook (PDF)": "/Users/nosei-opoku/Desktop/MyProjects/AI_EXAM/handbook.pdf"
     }
-
+    
     dataset_name = st.selectbox("Choose a dataset:", list(datasets.keys()))
     selected_path = datasets[dataset_name]
     content = ""
-
+    
     if selected_path.endswith(".pdf"):
         st.subheader("📄 PDF Preview")
         with st.spinner("Processing PDF... Please wait"):
@@ -776,7 +776,7 @@ elif task == "LLM Q&A":
             content = extract_text_from_pdf(selected_path)
     else:
         st.error("Unsupported file format. Please select a PDF file.")
-
+    
     # ------------------------------
     # RAG Retrieval Settings
     # ------------------------------
@@ -796,7 +796,7 @@ elif task == "LLM Q&A":
         retrieval_context = "\n\n".join([p for score, p in ranked[:num_passages]])
     else:
         retrieval_context = content
-
+    
     # ------------------------------
     # Ask Gemini
     # ------------------------------
@@ -805,16 +805,16 @@ elif task == "LLM Q&A":
         if retrieval_context and query:
             with st.spinner("Thinking..."):
                 try:
-                    response = model.generate_content(
-                        model='gemini-2.0-flash',
-                        contents=[retrieval_context, query]
-                    )
+                    # Generate answer using the working model's generate_content call,
+                    # passing both the retrieved context and the question.
+                    response = model.generate_content([retrieval_context, query])
                     st.success("🧠 Gemini’s Answer:")
                     st.write(response.text)
                 except Exception as e:
                     st.error(f"Error generating response: {e}")
         else:
             st.warning("Please load the PDF content and enter a question.")
+
 
 
 
