@@ -1,7 +1,9 @@
+import numpy as np
+if not hasattr(np, 'strings'):
+    np.strings = str  # Patch: Define np.strings as the built-in str type
 import os
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
@@ -16,6 +18,8 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import Callback
 import base64
 import io  # for StringIO
+import google.generativeai as genai
+
 
 # Additional packages for LLM Q&A
 import PyPDF2
@@ -713,7 +717,7 @@ elif task == "LLM Q&A":
         st.error("❌ Gemini API key not found. Please set GEMINI_API_KEY in your .env file.")
         st.stop()
 
-    import google.generativeai as genai
+    
     client = genai.Client(api_key=GEMINI_API_KEY)
     # Use the gemini-2.0-flash model.
     model = client.models  # We'll call generate_content via this client
