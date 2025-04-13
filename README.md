@@ -18,15 +18,8 @@ ML_AI_Explorer/
 
 ### 🤖 LLM Implementation Diagram
 
-```
-[ PDF Data ]
-       ↓ (Extraction via PyPDF2)
-[ extract_text_from_pdf ] — Cache → [ paragraphs ]
-                        |    (Rank & retrieve passages)
-                        ↓
-[ gemini-1.5-flash model ] — generate_content → [ AI answer ]
-              (google.generativeai with RAG context)
-```
+
+```![Screenshot 2025-04-13 at 7 37 41 PM](https://github.com/user-attachments/assets/6fe1be64-9046-4415-a8c5-560628b2b72b)
 
 ---
 
