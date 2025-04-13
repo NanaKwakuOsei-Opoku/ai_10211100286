@@ -1,7 +1,7 @@
 ### NANA KWAKU OSEI-OPOKU - 10211100286
 # 🌐 ML & AI Explorer Dashboard
 
-This repository hosts a Streamlit-based application showcasing multiple machine learning approaches—**Linear Regression**, **K-Means Clustering**, and **Neural Networks**—along with a powerful **LLM Q&A** feature using **Google’s Gemini AI** in **RAG mode**.
+This repository hosts a Streamlit-based application showcasing multiple machine learning approaches which are **Linear Regression**, **K-Means Clustering**, and **Neural Networks** along with a powerful **LLM Q&A** feature using **Google’s Gemini AI** in **RAG mode**.
 
 ---
 
