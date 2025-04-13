@@ -18,10 +18,8 @@ ML_AI_Explorer/
 
 ### 🤖 LLM Implementation Diagram
 
+![Screenshot 2025-04-13 at 7 39 20 PM](https://github.com/user-attachments/assets/ab68df54-b3ac-463d-aee5-ca0a32702ace)
 
-```![Screenshot 2025-04-13 at 7 37 41 PM](https://github.com/user-attachments/assets/6fe1be64-9046-4415-a8c5-560628b2b72b)
-
----
 
 ## 🚀 How It Works
 
